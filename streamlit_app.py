@@ -131,8 +131,8 @@ if uploaded_file is not None:
                 if not primitives:
                     st.error("❌ No primitives found in SVG. The file might be empty or invalid.")
                 else:
-                    # Run grouping
-                    groups = inference.group_primitives(primitives, threshold=0.5)
+                    # Run grouping with lower threshold for better grouping
+                    groups = inference.group_primitives(primitives, threshold=0.3)
                     
                     # Create record
                     record = create_grouping_record(

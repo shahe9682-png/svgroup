@@ -99,9 +99,12 @@ class SVGGroupingInference:
                 parent[px] = py
         
         # Union nodes connected by high-probability edges
+        edges_used = 0
         for i, edge in enumerate(graph.edges):
-            if edge_probs[i].item() >= threshold:
+            prob = edge_probs[i].item()
+            if prob >= threshold:
                 union(edge.src, edge.dst)
+                edges_used += 1
         
         # Group primitives by root
         groups_dict: dict[str, list[str]] = {}
@@ -111,10 +114,55 @@ class SVGGroupingInference:
                 groups_dict[root] = []
             groups_dict[root].append(prim.id)
         
+        # Fallback: if too many groups (each primitive isolated), try spatial clustering
+        if len(groups_dict) > len(primitives) * 0.7:  # If >70% are singleton groups
+            groups_dict = self._spatial_fallback_clustering(primitives, graph, edge_probs)
+        
         # Convert to integer-keyed groups
         groups = {i: members for i, members in enumerate(groups_dict.values())}
         
         return groups
+    
+    def _spatial_fallback_clustering(
+        self,
+        primitives: list[Primitive],
+        graph,
+        edge_probs: torch.Tensor,
+    ) -> dict[str, list[str]]:
+        """Fallback spatial clustering when model doesn't group well."""
+        # Use top 30% of edges by probability
+        edge_scores = [(i, edge, edge_probs[i].item()) 
+                       for i, edge in enumerate(graph.edges)]
+        edge_scores.sort(key=lambda x: x[2], reverse=True)
+        
+        # Take top edges
+        n_edges_to_use = max(len(primitives) // 2, len(edge_scores) // 3)
+        
+        parent = {p.id: p.id for p in primitives}
+        
+        def find(x):
+            if parent[x] != x:
+                parent[x] = find(parent[x])
+            return parent[x]
+        
+        def union(x, y):
+            px, py = find(x), find(y)
+            if px != py:
+                parent[px] = py
+        
+        # Use top probability edges
+        for i, edge, prob in edge_scores[:n_edges_to_use]:
+            union(edge.src, edge.dst)
+        
+        # Group by root
+        groups_dict: dict[str, list[str]] = {}
+        for prim in primitives:
+            root = find(prim.id)
+            if root not in groups_dict:
+                groups_dict[root] = []
+            groups_dict[root].append(prim.id)
+        
+        return groups_dict
 
 
 def create_grouping_record(
