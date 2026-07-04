@@ -1,0 +1,22 @@
+﻿SVGroup - Streamlit Deployment Package
+========================================
+
+WHAT'S INCLUDED:
+- streamlit_app.py (main app)
+- requirements.txt (dependencies)
+- gnn_model.pt (trained model)
+- svgroup/ (package folder with all modules)
+
+DEPLOY TO STREAMLIT CLOUD:
+1. Upload all files to GitHub (public repo)
+2. Go to: https://share.streamlit.io/
+3. Sign in with GitHub
+4. Click "New app"
+5. Select your repo, main branch, streamlit_app.py
+6. Click "Deploy!"
+
+LOCAL TEST:
+pip install -r requirements.txt
+streamlit run streamlit_app.py
+
+Total Size: ~0.23 MB
