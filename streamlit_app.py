@@ -19,11 +19,11 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom CSS for better styling
+# Custom CSS for better styling with mobile responsiveness
 st.markdown("""
 <style>
     .main-header {
-        font-size: 3rem;
+        font-size: clamp(1.5rem, 5vw, 3rem);
         color: #8b5cf6;
         text-align: center;
         margin-bottom: 1rem;
@@ -32,10 +32,11 @@ st.markdown("""
         text-align: center;
         color: #6b7280;
         margin-bottom: 2rem;
+        font-size: clamp(0.9rem, 3vw, 1.1rem);
     }
     .legend-box {
         background: white;
-        padding: 20px;
+        padding: 15px;
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         margin-top: 20px;
@@ -55,6 +56,21 @@ st.markdown("""
         border-radius: 4px;
         margin-right: 12px;
         flex-shrink: 0;
+    }
+    
+    /* Mobile optimizations */
+    @media (max-width: 768px) {
+        .stButton > button {
+            width: 100% !important;
+            padding: 0.75rem 1rem !important;
+            font-size: 1rem !important;
+            margin-top: 1rem !important;
+            margin-bottom: 1rem !important;
+        }
+        .main .block-container {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -115,14 +131,17 @@ with st.spinner("Loading model..."):
 # File upload
 uploaded_file = st.file_uploader("📁 Upload SVG File", type=['svg'], help="Upload an SVG file to analyze")
 
+# Process button - ALWAYS VISIBLE (but only active when file is uploaded)
+process_button = st.button("🚀 Run Grouping Analysis", type="primary", disabled=(uploaded_file is None), use_container_width=True)
+
 if uploaded_file is not None:
     # Create temporary file
     with tempfile.NamedTemporaryFile(delete=False, suffix='.svg') as tmp_file:
         tmp_file.write(uploaded_file.read())
         tmp_path = Path(tmp_file.name)
     
-    # Process button
-    if st.button("🚀 Run Grouping Analysis", type="primary"):
+    # Process when button is clicked
+    if process_button:
         with st.spinner("Analyzing SVG..."):
             try:
                 # Parse SVG
@@ -158,8 +177,8 @@ if uploaded_file is not None:
                     
                     st.markdown("---")
                     
-                    # Two columns for preview and legend
-                    col_left, col_right = st.columns(2)
+                    # Two columns for preview and legend (stack on mobile)
+                    col_left, col_right = st.columns([1, 1])
                     
                     with col_left:
                         st.markdown("### 📥 Input SVG")
